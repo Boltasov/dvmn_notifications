@@ -1,11 +1,10 @@
 import os
-import json
 import time
 import argparse
 import requests
 
 from dotenv import load_dotenv
-from telegram import Update, Bot
+from telegram import Bot
 from textwrap import dedent
 
 
@@ -49,6 +48,9 @@ def main():
             params['timestamp'] = updates['last_attempt_timestamp']
         elif status == 'timeout':
             params['timestamp'] = updates['timestamp_to_request']
+            continue
+        else:
+            continue
 
         attempts = updates['new_attempts']
         for attempt in attempts:
