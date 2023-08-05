@@ -6,7 +6,7 @@ import requests
 
 from dotenv import load_dotenv
 from telegram import Update, Bot
-from telegram.ext import Updater, CallbackContext, CommandHandler
+from textwrap import dedent
 
 
 def main():
@@ -44,21 +44,28 @@ def main():
         response.raise_for_status()
 
         updates = response.json()
-        params['timestamp'] = updates['last_attempt_timestamp']
+        status = updates['status']
+        if status == 'found':
+            params['timestamp'] = updates['last_attempt_timestamp']
+        elif status == 'timeout':
+            params['timestamp'] = updates['timestamp_to_request']
+
         attempts = updates['new_attempts']
         for attempt in attempts:
             lesson_title = attempt['lesson_title']
             mistakes = attempt['is_negative']
-            lesson_url =  attempt['lesson_url']
+            lesson_url = attempt['lesson_url']
             if mistakes:
-                message_text = f'У вас проверили работу "{lesson_title}"\n\n' \
-                               f'К сожалению, в работе нашли ошибки.\n\n' \
-                               f'Ссылка на урок: {lesson_url}'
+                message_text = f'''\
+                У вас проверили работу "{lesson_title}"
+                К сожалению, в работе нашли ошибки.
+                Ссылка на урок: {lesson_url}'''
             else:
-                message_text = f'У вас проверили работу "{lesson_title}"\n\n' \
-                               f'Преподавателю всё понравилось. Можно приступать к следующему уроку!'
+                message_text = f'''\
+                У вас проверили работу "{lesson_title}"
+                Преподавателю всё понравилось. Можно приступать к следующему уроку!'''
 
-            bot.send_message(text=message_text, chat_id=args.chat_id)
+            bot.send_message(text=dedent(message_text), chat_id=args.chat_id)
 
 
 if __name__ == '__main__':
