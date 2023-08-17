@@ -8,7 +8,7 @@
 
 Скачайте код с помощью команды в командной строке
 ```commandline
-https://github.com/Boltasov/dvmn_notifications
+git clone https://github.com/Boltasov/dvmn_notifications
 ```
 Перейдите в папку с проектом
 ```commandline
