@@ -25,7 +25,10 @@ python pip install -r requirements.txt
 ```text
 DVMN_KEY='Put_here_your_devman_key'
 TG_BOT_KEY='Put_here_your_telegram_bot_key'
+LOG_BOT_KEY='Put_here_your_telegram_bot_key'
 ```
+`TG_BOT_KEY` - ключ от бота, в который будут приходить обновления по задачам.
+`LOG_BOT_KEY` - ключ от бота, куда будут приходить логи бота.
 
 Для запуска будет необходимо указать ваш chat_id в Telegram, чтобы уведомления приходили именно вам. Чтобы получить свой chat_id, напишите в Telegram специальному боту: [@userinfobot](https://telegram.me/userinfobot).
 

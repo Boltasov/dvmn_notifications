@@ -9,16 +9,34 @@ from telegram import Bot
 from textwrap import dedent
 
 
-def main():
-    logging.basicConfig(level=logging.INFO)
-    logging.info('Бот запустился. Всё идёт по плану.')
+class MyLogsHandler(logging.Handler):
+    load_dotenv()
 
+    tg_bot_key = os.getenv('LOG_BOT_KEY')
+    log_bot = Bot(token=tg_bot_key)
+    chat_id = ''
+
+    def __init__(self, chat_id):
+        super().__init__()
+        self.chat_id = chat_id
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        self.log_bot.send_message(text=log_entry, chat_id=self.chat_id)
+
+
+def main():
     parser = argparse.ArgumentParser(
         prog='DvmnNotifier',
         description='Скрипт присылает уведомления о проверенных в devman работах в телеграм-бот.',
     )
     parser.add_argument("--chat_id", help='Ваш chat_id в telegram', type=int, required=True)
     args = parser.parse_args()
+
+    logger = logging.getLogger("TG logger")
+    logger.setLevel(logging.INFO)
+    logger.addHandler(MyLogsHandler(chat_id=args.chat_id))
+    logger.info('Бот запустился. Всё идёт по плану.')
 
     load_dotenv()
 
@@ -39,10 +57,10 @@ def main():
         try:
             response = requests.get(polling_url, headers=header, params=params, timeout=30)
         except requests.exceptions.ReadTimeout:
-            logging.warning('ReadTimeout. Продолжаю ждать ответа.')
+            logger.warning('ReadTimeout. Продолжаю ждать ответа.')
             continue
         except requests.ConnectionError:
-            logging.warning('Ошибка соединения. Попытка восстановить связь.')
+            logger.warning('Ошибка соединения. Попытка восстановить связь.')
             time.sleep(10)
             continue
 
@@ -75,7 +93,7 @@ def main():
 
             bot.send_message(text=dedent(message_text), chat_id=args.chat_id)
 
-        logging.info('Отправил обновления по проверенным задачам. Всё идёт по плану.')
+        logger.info('Отправил обновления по проверенным задачам. Всё идёт по плану.')
 
 
 if __name__ == '__main__':
