@@ -3,6 +3,7 @@ import time
 import argparse
 import requests
 import logging
+import traceback
 
 from dotenv import load_dotenv
 from telegram import Bot
@@ -55,45 +56,49 @@ def main():
 
     while True:
         try:
-            response = requests.get(polling_url, headers=header, params=params, timeout=30)
-        except requests.exceptions.ReadTimeout:
-            logger.warning('ReadTimeout. Продолжаю ждать ответа.')
-            continue
-        except requests.ConnectionError:
-            logger.warning('Ошибка соединения. Попытка восстановить связь.')
-            time.sleep(10)
-            continue
+            try:
+                response = requests.get(polling_url, headers=header, params=params, timeout=30)
+            except requests.exceptions.ReadTimeout:
+                logger.debug('ReadTimeout. Продолжаю ждать ответа.')
+                continue
+            except requests.ConnectionError:
+                logger.warning('Ошибка соединения. Попытка восстановить связь.')
+                time.sleep(10)
+                continue
 
-        response.raise_for_status()
+            response.raise_for_status()
 
-        updates = response.json()
-        status = updates['status']
-        if status == 'found':
-            params['timestamp'] = updates['last_attempt_timestamp']
-        elif status == 'timeout':
-            params['timestamp'] = updates['timestamp_to_request']
-            continue
-        else:
-            continue
-
-        attempts = updates['new_attempts']
-        for attempt in attempts:
-            lesson_title = attempt['lesson_title']
-            mistakes = attempt['is_negative']
-            lesson_url = attempt['lesson_url']
-            if mistakes:
-                message_text = f'''\
-                У вас проверили работу "{lesson_title}"
-                К сожалению, в работе нашли ошибки.
-                Ссылка на урок: {lesson_url}'''
+            updates = response.json()
+            status = updates['status']
+            if status == 'found':
+                params['timestamp'] = updates['last_attempt_timestamp']
+            elif status == 'timeout':
+                params['timestamp'] = updates['timestamp_to_request']
+                continue
             else:
-                message_text = f'''\
-                У вас проверили работу "{lesson_title}"
-                Преподавателю всё понравилось. Можно приступать к следующему уроку!'''
+                continue
 
-            bot.send_message(text=dedent(message_text), chat_id=args.chat_id)
+            attempts = updates['new_attempts']
+            for attempt in attempts:
+                lesson_title = attempt['lesson_title']
+                mistakes = attempt['is_negative']
+                lesson_url = attempt['lesson_url']
+                if mistakes:
+                    message_text = f'''\
+                    У вас проверили работу "{lesson_title}"
+                    К сожалению, в работе нашли ошибки.
+                    Ссылка на урок: {lesson_url}'''
+                else:
+                    message_text = f'''\
+                    У вас проверили работу "{lesson_title}"
+                    Преподавателю всё понравилось. Можно приступать к следующему уроку!'''
 
-        logger.info('Отправил обновления по проверенным задачам. Всё идёт по плану.')
+                bot.send_message(text=dedent(message_text), chat_id=args.chat_id)
+
+            logger.info('Отправил обновления по проверенным задачам. Всё идёт по плану.')
+        except Exception:
+            logger.error('Бот упал с ошибкой:')
+            logger.error(traceback.format_exc())
 
 
 if __name__ == '__main__':
