@@ -2,6 +2,7 @@ import os
 import time
 import argparse
 import requests
+import logging
 
 from dotenv import load_dotenv
 from telegram import Bot
@@ -9,6 +10,9 @@ from textwrap import dedent
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+    logging.info('Бот запустился. Всё идёт по плану.')
+
     parser = argparse.ArgumentParser(
         prog='DvmnNotifier',
         description='Скрипт присылает уведомления о проверенных в devman работах в телеграм-бот.',
@@ -35,8 +39,10 @@ def main():
         try:
             response = requests.get(polling_url, headers=header, params=params, timeout=30)
         except requests.exceptions.ReadTimeout:
+            logging.warning('ReadTimeout. Продолжаю ждать ответа.')
             continue
         except requests.ConnectionError:
+            logging.warning('Ошибка соединения. Попытка восстановить связь.')
             time.sleep(10)
             continue
 
@@ -68,6 +74,8 @@ def main():
                 Преподавателю всё понравилось. Можно приступать к следующему уроку!'''
 
             bot.send_message(text=dedent(message_text), chat_id=args.chat_id)
+
+        logging.info('Отправил обновления по проверенным задачам. Всё идёт по плану.')
 
 
 if __name__ == '__main__':
