@@ -3,19 +3,15 @@ import time
 import argparse
 import requests
 import logging
-import traceback
 
 from dotenv import load_dotenv
 from telegram import Bot
 from textwrap import dedent
 
 logger = logging.getLogger("TG logger")
-logger.setLevel(logging.INFO)
 
 
 class LogsHandler(logging.Handler):
-    chat_id = ''
-    tg_bot_key = ''
 
     def __init__(self, chat_id, tg_bot_key):
         super().__init__()
@@ -102,4 +98,5 @@ def main():
 
 
 if __name__ == '__main__':
+    logger.setLevel(logging.INFO)
     main()
