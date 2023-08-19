@@ -9,21 +9,23 @@ from dotenv import load_dotenv
 from telegram import Bot
 from textwrap import dedent
 
+logger = logging.getLogger("TG logger")
+logger.setLevel(logging.INFO)
 
-class MyLogsHandler(logging.Handler):
-    load_dotenv()
 
-    tg_bot_key = os.getenv('LOG_BOT_KEY')
-    log_bot = Bot(token=tg_bot_key)
+class LogsHandler(logging.Handler):
     chat_id = ''
+    tg_bot_key = ''
 
-    def __init__(self, chat_id):
+    def __init__(self, chat_id, tg_bot_key):
         super().__init__()
         self.chat_id = chat_id
+        self.tg_bot_key = tg_bot_key
 
     def emit(self, record):
+        log_bot = Bot(token=self.tg_bot_key)
         log_entry = self.format(record)
-        self.log_bot.send_message(text=log_entry, chat_id=self.chat_id)
+        log_bot.send_message(text=log_entry, chat_id=self.chat_id)
 
 
 def main():
@@ -34,15 +36,14 @@ def main():
     parser.add_argument("--chat_id", help='Ваш chat_id в telegram', type=int, required=True)
     args = parser.parse_args()
 
-    logger = logging.getLogger("TG logger")
-    logger.setLevel(logging.INFO)
-    logger.addHandler(MyLogsHandler(chat_id=args.chat_id))
-    logger.info('Бот запустился. Всё идёт по плану.')
-
     load_dotenv()
 
     dvmn_key = os.getenv('DVMN_KEY')
     tg_bot_key = os.getenv('TG_BOT_KEY')
+    log_bot_key = os.getenv('LOG_BOT_KEY')
+
+    logger.addHandler(LogsHandler(chat_id=args.chat_id, tg_bot_key=log_bot_key))
+    logger.info('Бот запустился. Всё идёт по плану.')
 
     bot = Bot(token=tg_bot_key)
 
@@ -97,8 +98,7 @@ def main():
 
             logger.info('Отправил обновления по проверенным задачам. Всё идёт по плану.')
         except Exception:
-            logger.error('Бот упал с ошибкой:')
-            logger.error(traceback.format_exc())
+            logger.exception('Бот упал с ошибкой: ')
 
 
 if __name__ == '__main__':
